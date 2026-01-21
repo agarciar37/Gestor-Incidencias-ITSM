@@ -1,18 +1,15 @@
-// routes/api/audit.ts
 import { Handlers } from "$fresh/server.ts";
-import { ObjectId } from "npm:mongodb@6.20.0";
-import { getCollections } from "../../utils/db.ts";
+import { audit_log } from "../../utils/db.ts";
+import { ObjectId } from "npm:mongodb";
 
 export const handler: Handlers = {
   async POST(req) {
     try {
-      const { audit_log } = await getCollections();
       const { incidenciaId, usuario, accion } = await req.json();
 
       if (!incidenciaId || !accion) {
         return new Response(JSON.stringify({ error: "Faltan datos" }), {
           status: 400,
-          headers: { "Content-Type": "application/json" },
         });
       }
 
@@ -23,29 +20,23 @@ export const handler: Handlers = {
         fecha: new Date(),
       });
 
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 201,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ ok: true }), { status: 201 });
     } catch (e) {
       console.error("Error audit POST:", e);
       return new Response(JSON.stringify({ error: "Error interno" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
       });
     }
   },
 
   async GET(req) {
     try {
-      const { audit_log } = await getCollections();
       const url = new URL(req.url);
       const id = url.searchParams.get("id");
 
       if (!id) {
         return new Response(JSON.stringify({ error: "ID requerido" }), {
           status: 400,
-          headers: { "Content-Type": "application/json" },
         });
       }
 
@@ -61,7 +52,6 @@ export const handler: Handlers = {
       console.error("Error audit GET:", e);
       return new Response(JSON.stringify({ error: "Error interno" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
       });
     }
   },

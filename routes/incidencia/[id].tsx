@@ -1,13 +1,12 @@
-// routes/incidencia/[id].tsx
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { ObjectId } from "npm:mongodb@6.20.0";
-import { getCollections } from "../../utils/db.ts";
+import { incidencias } from "../../utils/db.ts";
+import { ObjectId } from "npm:mongodb";
 import TareasIncidencia from "../../islands/TareasIncidencia.tsx";
 import AuditLog from "../../islands/AuditLog.tsx";
 import { Incidencia } from "../../types.ts";
 
 export const handler: Handlers = {
-  async GET(_req, ctx) {
+  async GET(req, ctx) {
     const { id } = ctx.params;
 
     if (!ObjectId.isValid(id)) {
@@ -15,10 +14,11 @@ export const handler: Handlers = {
       return ctx.renderNotFound();
     }
 
-    const { incidencias } = await getCollections();
-    const incidencia = await incidencias.findOne({ _id: new ObjectId(id) }) as any;
+    const incidencia = await incidencias.findOne({ _id: new ObjectId(id) });
 
-    if (!incidencia) return ctx.renderNotFound();
+    if (!incidencia) {
+      return ctx.renderNotFound();
+    }
 
     return ctx.render({ incidencia, id });
   },
@@ -33,13 +33,14 @@ export default function IncidenciaPage(
     <div class="sn-container">
       <header class="sn-header sn-header-detail">
         <h1 class="sn-title">
-          INC{(incidencia as any)._id?.toString().slice(-6)} — {incidencia.titulo}
+          INC{incidencia._id?.toString().slice(-6)} — {incidencia.titulo}
         </h1>
         <p class={`sn-badge sn-${incidencia.estado.replace(" ", "")}`}>
           {incidencia.estado.toUpperCase()}
         </p>
       </header>
 
+      {/* Panel de información de la incidencia */}
       <section class="sn-card">
         <h2 class="sn-section-title">Detalles de la incidencia</h2>
 
@@ -89,10 +90,12 @@ export default function IncidenciaPage(
         </div>
       </section>
 
+      {/* Tareas de la incidencia */}
       <section class="sn-card">
         <TareasIncidencia incidenciaId={id} />
       </section>
 
+      {/* Audit Log */}
       <section class="sn-card">
         <AuditLog incidenciaId={id} />
       </section>

@@ -1,6 +1,5 @@
-// routes/index.tsx
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { getCollections } from "../utils/db.ts";
+import { incidencias } from "../utils/db.ts";
 import { Dashboard, Incidencia } from "../types.ts";
 import Header from "../components/Header.tsx";
 import DashboardCards from "../components/Dashboard.tsx";
@@ -10,22 +9,19 @@ import IncidenciasList from "../islands/IncidenciasList.tsx";
 
 export const handler: Handlers = {
   async GET(_, ctx) {
-    const { incidencias } = await getCollections();
     const data = await incidencias.find({}).toArray();
 
     const dashboard: Dashboard = {
       total: data.length,
-      abiertas: data.filter((i: any) => i.estado === "abierta").length,
-      enCurso: data.filter((i: any) => i.estado === "en curso").length,
-      cerradas: data.filter((i: any) => i.estado === "cerrada").length,
+      abiertas: data.filter((i) => i.estado === "abierta").length,
+      enCurso: data.filter((i) => i.estado === "en curso").length,
+      cerradas: data.filter((i) => i.estado === "cerrada").length,
     };
 
     return ctx.render({ data, dashboard });
   },
 
   async POST(req) {
-    const { incidencias } = await getCollections();
-
     const form = await req.formData();
     const titulo = form.get("titulo")?.toString() || "";
     const descripcion = form.get("descripcion")?.toString() || "";
@@ -50,7 +46,7 @@ export const handler: Handlers = {
       nueva.tecnico = "Técnico principal";
     }
 
-    await incidencias.insertOne(nueva as any);
+    await incidencias.insertOne(nueva);
 
     return new Response("", {
       status: 303,

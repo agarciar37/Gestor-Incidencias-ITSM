@@ -1,43 +1,37 @@
-// routes/api/tareas.ts
 import { Handlers } from "$fresh/server.ts";
-import { ObjectId } from "npm:mongodb@6.20.0";
-import { getCollections } from "../../utils/db.ts";
+import { tareas, incidencias } from "../../utils/db.ts";
+import { ObjectId } from "npm:mongodb";
 
-async function registrarLog(
-  incidenciaId: string,
-  accion: string,
-  usuario = "System",
-) {
-  const { audit_log } = await getCollections();
+const BASE = Deno.env.get("BASE_URL") || "http://localhost:8000";
 
-  await audit_log.insertOne({
-    incidenciaId: new ObjectId(incidenciaId),
-    usuario,
-    accion,
-    fecha: new Date(),
+async function registrarLog(incidenciaId: string, accion: string) {
+  await fetch(`${BASE}/api/audit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      incidenciaId,
+      usuario: "System",
+      accion,
+    }),
   });
 }
 
 export const handler: Handlers = {
   async GET(req) {
-    const { tareas } = await getCollections();
     const url = new URL(req.url);
     const incidenciaId = url.searchParams.get("incidenciaId");
 
     if (!incidenciaId) {
-      return new Response(JSON.stringify([]), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify([]));
     }
 
     const lista = await tareas
       .find({ incidenciaId: new ObjectId(incidenciaId) })
       .toArray();
 
-    const normalizadas = lista.map((t: any) => ({
+    const normalizadas = lista.map((t) => ({
       ...t,
       _id: t._id.toString(),
-      incidenciaId: t.incidenciaId.toString(),
     }));
 
     return new Response(JSON.stringify(normalizadas), {
@@ -46,58 +40,38 @@ export const handler: Handlers = {
   },
 
   async POST(req) {
-    const { tareas, incidencias } = await getCollections();
     const { incidenciaId, titulo, descripcion } = await req.json();
 
-    if (!incidenciaId || !titulo) {
-      return new Response(JSON.stringify({ error: "Faltan datos" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const incObjId = new ObjectId(incidenciaId);
-
     const nueva = {
-      incidenciaId: incObjId,
+      incidenciaId: new ObjectId(incidenciaId),
       titulo,
       descripcion,
       completada: false,
       fecha_creacion: new Date(),
     };
 
-    await tareas.insertOne(nueva as any);
+    await tareas.insertOne(nueva);
+
     await registrarLog(incidenciaId, `Tarea creada: ${titulo}`);
 
-    // Al crear una tarea, la incidencia pasa a "en curso"
     await incidencias.updateOne(
-      { _id: incObjId },
+      { _id: new ObjectId(incidenciaId) },
       { $set: { estado: "en curso" } },
     );
+
     await registrarLog(incidenciaId, `Estado cambiado a 'en curso'`);
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true }));
   },
 
   async PUT(req) {
-    const { tareas, incidencias } = await getCollections();
     const { tareaId, completada } = await req.json();
 
-    if (!tareaId || typeof completada !== "boolean") {
-      return new Response(JSON.stringify({ error: "Faltan datos" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const tarea = await tareas.findOne({ _id: new ObjectId(tareaId) }) as any;
+    const tarea = await tareas.findOne({ _id: new ObjectId(tareaId) });
 
     if (!tarea) {
       return new Response(JSON.stringify({ error: "Tarea no encontrada" }), {
         status: 404,
-        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -106,7 +80,7 @@ export const handler: Handlers = {
       {
         $set: {
           completada,
-          fecha_completada: completada ? new Date() : null,
+          fecha_completada: completada ? new Date() : undefined,
         },
       },
     );
@@ -117,7 +91,7 @@ export const handler: Handlers = {
       incidenciaId,
       completada
         ? `Tarea completada: ${tarea.titulo}`
-        : `Tarea marcada pendiente: ${tarea.titulo}`,
+        : `Tarea marcada pendiente: ${tarea.titulo}`
     );
 
     const total = await tareas.countDocuments({ incidenciaId: tarea.incidenciaId });
@@ -134,15 +108,13 @@ export const handler: Handlers = {
       {
         $set: {
           estado: nuevoEstado,
-          ...(nuevoEstado === "cerrada" ? { fecha_cierre: new Date() } : { fecha_cierre: null }),
+          ...(nuevoEstado === "cerrada" ? { fecha_cierre: new Date() } : {}),
         },
       },
     );
 
     await registrarLog(incidenciaId, `Estado cambiado a '${nuevoEstado}'`);
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true }));
   },
 };
