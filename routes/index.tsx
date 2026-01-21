@@ -6,6 +6,7 @@ import DashboardCards from "../components/Dashboard.tsx";
 import FormNuevaIncidencia from "../components/FormNuevaIncidencia.tsx";
 import InfoAside from "../components/InfoAside.tsx";
 import IncidenciasList from "../islands/IncidenciasList.tsx";
+import { getCollections } from "../utils/db.ts";
 
 export const handler: Handlers = {
   async GET(_, ctx) {
