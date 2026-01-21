@@ -1,11 +1,13 @@
+// routes/api/incidencias.ts
 import { Handlers } from "$fresh/server.ts";
-import { incidencias } from "../../utils/db.ts";
+import { ObjectId } from "npm:mongodb@6.20.0";
+import { getCollections } from "../../utils/db.ts";
 import { Incidencia } from "../../types.ts";
-import { ObjectId } from "npm:mongodb";
 
 export const handler: Handlers = {
   async POST(req) {
     try {
+      const { incidencias } = await getCollections();
       const body: Incidencia = await req.json();
 
       if (!body.titulo || !body.descripcion || !body.prioridad) {
@@ -40,6 +42,7 @@ export const handler: Handlers = {
 
   async GET() {
     try {
+      const { incidencias } = await getCollections();
       const data = await incidencias.find({}).toArray();
       return new Response(JSON.stringify(data), {
         headers: { "Content-Type": "application/json" },
@@ -55,6 +58,7 @@ export const handler: Handlers = {
 
   async PUT(req) {
     try {
+      const { incidencias } = await getCollections();
       const { id, estado } = await req.json();
 
       const estadosPermitidos: Incidencia["estado"][] = [
@@ -72,6 +76,7 @@ export const handler: Handlers = {
 
       const updateData: any = { estado };
       const unsetData: Record<string, ""> = {};
+
       if (estado === "cerrada") {
         updateData.fecha_cierre = new Date();
       } else {
