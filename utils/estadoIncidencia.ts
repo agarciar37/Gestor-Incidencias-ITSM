@@ -1,13 +1,12 @@
-import { ObjectId } from "npm:mongodb";
-import { tareas, incidencias } from "./db.ts";
+import { tareas, incidencias, objectId } from "./db.ts";
 import { Incidencia, TareaIncidencia } from "../types.ts";
 
 export async function recalcularEstadoIncidencia(
   incidenciaId: string,
 ): Promise<Incidencia["estado"]> {
   const listaTareas = await tareas
-    .find<TareaIncidencia>({ incidenciaId })
-    .toArray();
+    .find({ incidenciaId: objectId(incidenciaId) })
+    .toArray() as TareaIncidencia[];
 
   let nuevoEstado: Incidencia["estado"] = "abierta";
 
@@ -32,7 +31,7 @@ export async function recalcularEstadoIncidencia(
   }
 
   await incidencias.updateOne(
-    { _id: new ObjectId(incidenciaId) },
+    { _id: objectId(incidenciaId) },
     { $set: update },
   );
 

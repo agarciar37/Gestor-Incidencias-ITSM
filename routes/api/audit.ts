@@ -1,6 +1,5 @@
 import { Handlers } from "$fresh/server.ts";
-import { audit_log } from "../../utils/db.ts";
-import { ObjectId } from "npm:mongodb";
+import { audit_log, objectId } from "../../utils/db.ts";
 
 export const handler: Handlers = {
   async POST(req) {
@@ -14,7 +13,7 @@ export const handler: Handlers = {
       }
 
       await audit_log.insertOne({
-        incidenciaId: new ObjectId(incidenciaId),
+        incidenciaId: objectId(incidenciaId),
         usuario: usuario || "System",
         accion,
         fecha: new Date(),
@@ -41,7 +40,7 @@ export const handler: Handlers = {
       }
 
       const logs = await audit_log
-        .find({ incidenciaId: new ObjectId(id) })
+        .find({ incidenciaId: objectId(id) })
         .sort({ fecha: -1 })
         .toArray();
 
