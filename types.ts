@@ -1,5 +1,5 @@
 export interface Incidencia {
-  _id?: { $oid: string };
+  _id?: string;
   titulo: string;
   descripcion: string;
   prioridad: "baja" | "media" | "alta";
@@ -17,17 +17,17 @@ export interface Dashboard {
 }
 
 export interface Tarea {
-  _id?: { $oid: string } | string;
-  incidenciaId: string;       
-  titulo: string;             
-  descripcion?: string;       
-  completada: boolean;        
-  fecha_creacion: Date;       
-  fecha_completada?: Date;    
+  _id?: string;
+  incidenciaId: string;
+  titulo: string;
+  descripcion?: string;
+  completada: boolean;
+  fecha_creacion: Date;
+  fecha_completada?: Date;
 }
 
 export interface TareaIncidencia {
-  _id?: { $oid: string };
+  _id?: string;
   incidenciaId: string;
   titulo: string;
   descripcion?: string;

@@ -4,8 +4,8 @@ if (Deno.env.get("DENO_DEPLOYMENT_ID") === undefined) {
   await import("jsr:@std/dotenv/load");
 }
 
-const uri = Deno.env.get("MONGO_URL");
-const dbName = Deno.env.get("DB_NAME");
+const uri = "mongodb+srv://itsm_user:1234@cluster0.bm2imrw.mongodb.net/?appName=Cluster0"
+const dbName = "itsm_db";
 
 if (!uri || !dbName) {
   throw new Error("Faltan variables de entorno MONGO_URL o DB_NAME");
