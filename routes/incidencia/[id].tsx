@@ -1,6 +1,5 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { incidencias } from "../../utils/db.ts";
-import { ObjectId } from "npm:mongodb";
+import { incidencias, isValidObjectId, objectId } from "../../utils/db.ts";
 import TareasIncidencia from "../../islands/TareasIncidencia.tsx";
 import AuditLog from "../../islands/AuditLog.tsx";
 import { Incidencia } from "../../types.ts";
@@ -9,12 +8,12 @@ export const handler: Handlers = {
   async GET(req, ctx) {
     const { id } = ctx.params;
 
-    if (!ObjectId.isValid(id)) {
+    if (!isValidObjectId(id)) {
       console.warn("⚠️ ID inválido recibido:", id);
       return ctx.renderNotFound();
     }
 
-    const incidencia = await incidencias.findOne({ _id: new ObjectId(id) });
+    const incidencia = await incidencias.findOne({ _id: objectId(id) });
 
     if (!incidencia) {
       return ctx.renderNotFound();
@@ -33,7 +32,7 @@ export default function IncidenciaPage(
     <div class="sn-container">
       <header class="sn-header sn-header-detail">
         <h1 class="sn-title">
-          INC{incidencia._id?.toString().slice(-6)} — {incidencia.titulo}
+          INC{incidencia._id?.slice(-6)} — {incidencia.titulo}
         </h1>
         <p class={`sn-badge sn-${incidencia.estado.replace(" ", "")}`}>
           {incidencia.estado.toUpperCase()}

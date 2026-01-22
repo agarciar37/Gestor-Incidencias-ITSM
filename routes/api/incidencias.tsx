@@ -1,7 +1,6 @@
 import { Handlers } from "$fresh/server.ts";
-import { incidencias } from "../../utils/db.ts";
+import { incidencias, objectId } from "../../utils/db.ts";
 import { Incidencia } from "../../types.ts";
-import { ObjectId } from "npm:mongodb";
 
 export const handler: Handlers = {
   async POST(req) {
@@ -79,7 +78,7 @@ export const handler: Handlers = {
       }
 
       const { matchedCount } = await incidencias.updateOne(
-        { _id: new ObjectId(id) },
+        { _id: objectId(id) },
         {
           ...(Object.keys(updateData).length ? { $set: updateData } : {}),
           ...(Object.keys(unsetData).length ? { $unset: unsetData } : {}),

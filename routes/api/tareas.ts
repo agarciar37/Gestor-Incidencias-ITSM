@@ -1,6 +1,5 @@
 import { Handlers } from "$fresh/server.ts";
-import { tareas, incidencias } from "../../utils/db.ts";
-import { ObjectId } from "npm:mongodb";
+import { tareas, incidencias, objectId } from "../../utils/db.ts";
 
 const BASE = Deno.env.get("BASE_URL") || "http://localhost:8000";
 
@@ -26,15 +25,10 @@ export const handler: Handlers = {
     }
 
     const lista = await tareas
-      .find({ incidenciaId: new ObjectId(incidenciaId) })
+      .find({ incidenciaId: objectId(incidenciaId) })
       .toArray();
 
-    const normalizadas = lista.map((t) => ({
-      ...t,
-      _id: t._id.toString(),
-    }));
-
-    return new Response(JSON.stringify(normalizadas), {
+    return new Response(JSON.stringify(lista), {
       headers: { "Content-Type": "application/json" },
     });
   },
@@ -43,7 +37,7 @@ export const handler: Handlers = {
     const { incidenciaId, titulo, descripcion } = await req.json();
 
     const nueva = {
-      incidenciaId: new ObjectId(incidenciaId),
+      incidenciaId: objectId(incidenciaId),
       titulo,
       descripcion,
       completada: false,
@@ -55,7 +49,7 @@ export const handler: Handlers = {
     await registrarLog(incidenciaId, `Tarea creada: ${titulo}`);
 
     await incidencias.updateOne(
-      { _id: new ObjectId(incidenciaId) },
+      { _id: objectId(incidenciaId) },
       { $set: { estado: "en curso" } },
     );
 
@@ -67,7 +61,7 @@ export const handler: Handlers = {
   async PUT(req) {
     const { tareaId, completada } = await req.json();
 
-    const tarea = await tareas.findOne({ _id: new ObjectId(tareaId) });
+    const tarea = await tareas.findOne({ _id: objectId(tareaId) });
 
     if (!tarea) {
       return new Response(JSON.stringify({ error: "Tarea no encontrada" }), {
@@ -76,7 +70,7 @@ export const handler: Handlers = {
     }
 
     await tareas.updateOne(
-      { _id: new ObjectId(tareaId) },
+      { _id: objectId(tareaId) },
       {
         $set: {
           completada,
@@ -85,7 +79,7 @@ export const handler: Handlers = {
       },
     );
 
-    const incidenciaId = tarea.incidenciaId.toString();
+    const incidenciaId = tarea.incidenciaId;
 
     await registrarLog(
       incidenciaId,
@@ -94,9 +88,11 @@ export const handler: Handlers = {
         : `Tarea marcada pendiente: ${tarea.titulo}`
     );
 
-    const total = await tareas.countDocuments({ incidenciaId: tarea.incidenciaId });
+    const total = await tareas.countDocuments({
+      incidenciaId: objectId(tarea.incidenciaId),
+    });
     const hechas = await tareas.countDocuments({
-      incidenciaId: tarea.incidenciaId,
+      incidenciaId: objectId(tarea.incidenciaId),
       completada: true,
     });
 
@@ -104,7 +100,7 @@ export const handler: Handlers = {
     if (total > 0 && total === hechas) nuevoEstado = "cerrada";
 
     await incidencias.updateOne(
-      { _id: tarea.incidenciaId },
+      { _id: objectId(tarea.incidenciaId) },
       {
         $set: {
           estado: nuevoEstado,
